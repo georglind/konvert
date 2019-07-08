@@ -2,9 +2,9 @@
 
 Konvert implements universal conversion graphs for e.g. coordinate transformations.
 
-The core machinery of konvert is a graph representation of entity types that are connected by two-way conversions. The graph can be expandend incrementally, since it only requires two connections to connect a new entity to the graph, The entity can then be freely converted to any other type in the graph, by automatically chaining conversions between existing types.
+At the core, konvert represents types connected by conversions on a graph. Such conversion graphs can be expandend incrementally, because it only requires two connections to connect a new type to the graph, This type can then be freely converted to any other type in the graph, by automatically chaining conversions between existing types.
 
-In addition konvert also handles a projections, conversions that require additional parameters, by exposing a general projection regsitry.
+The automatic chaining requires the conversions to be parameter-free. Conversions with additional parameters are called projections, which konvert also helps you manage.
 
 ## Points
 
@@ -16,7 +16,7 @@ from konvert.points import Cartesian2D
 line = Cartesian2D(x=[0, 1, 2], y=[0, 1, 2])
 ```
 
-This points can be converted to other implented 2D point sets, ``Polar`` and ``Bipolar``, by using the ``to()`` method
+This points can be converted to other implented 2D point sets, like ``Polar`` and ``Bipolar``, by using the ``to()`` method
 
 ```python
 from konvert.points import Polar, Bipolar
@@ -25,13 +25,13 @@ lp = line.to(Polar)
 lb = line.to(Bipolar)
 ```
 
-It can also be lifted up to its 3D description, ```l3 = line.to(Cartesian3D)```. The conversion graph can automatically chains conversions, so in fact, any point in the plane can be hoisted up to any point in three-dimensional space. That means, that points in e.g. polar coordinates, can be hoisted up to ```Cartesian3D```.
+It can also be lifted up to its 3D description, ```l3 = line.to(Cartesian3D)```. The conversion graph can automatically chain conversions, so in fact, any point in the plane can be hoisted up to any point in three-dimensional space. That means, that points in e.g. polar coordinates, can be hoisted up to ```Cartesian3D```.
 
 ```python
 p0 = Polar(theta=30 * degrees, r=1.5).to(Cartesian3D)
 ```
 
-Points in 3D can be represented using ``Cartesian3D``, ``Cylindrical``, and ``Spherical``. All Cartesian types have some helper methods for easily manipulating points. 
+Points in 3D can be represented using the coordinate representations ``Cartesian3D``, ``Cylindrical``, and ``Spherical``. All Cartesian types have some helper methods for easily manipulating points. 
 
 ```python
 p0 = Cartesian3D(1, 1, 1)
@@ -43,13 +43,13 @@ p1 = p0.normalized()
 # Shift p0 by q0
 p0.shift(q0)  
 
-# Rotate around axis thorugh q0.
+# Rotate around an axis thorugh q0.
 p0.rotate(theta=45 * degrees, point=q0)
 ```
 
 ### Helpers
 
-Because points work extensively with angles it is convenient to define the ``degrees`` symbol, which magically converts values and arrays to radians,
+Because the points module work extensively with angles, konvert defines a convenience ``degrees`` symbol, which converts values and arrays in degrees to radians,
 
 ```python
 from konvert.points import degrees
@@ -77,9 +77,10 @@ The points can be easily plotted using matplotlib and the plot utility on Cartes
 
 ### Extending the conversion graph
 
-It is fairly simple to extend an existing conversion graph and an existing projection registry. Let us extend the points graph with a Skew2D coordinate system. Note the use of numpy to efficiently represent and transform coordinates.
+It is fairly simple to extend an existing conversion graph and an existing projection collection. Let us extend the points graph with a Skew2D coordinate system. Note the use of numpy to efficiently represent and transform coordinates.
 
 ```python
+import numpy
 from konvert.points import Points
 
 class Skew2D(Points):
@@ -94,7 +95,7 @@ class Skew2D(Points):
         self.theta = theta
 ```
 
-The Skew2D class can be connected to the points conversion graph by using the following conversion.
+The Skew2D class can be connected to the ``konvert.points`` conversion graph by using the following conversion.
 
 ```python
 from konvert.points import converters, Conversion
@@ -126,7 +127,7 @@ class Cartesian2DToSkew2D(Projection):
         return Skew2D(x, y, theta)
 ```
 
-With these two additions we can convet between Skew2D points and any points in the graph,
+With these two additions we can convet between Skew2D points and any points type in the graph,
 
 ```python
 p0 = Skew2D(1, 2, theta=45 * degrees)
@@ -142,7 +143,7 @@ p0 = p1.project(OnPlane).project(Cartesian2DToSkew2D, theta=45 * degrees)
 
 ## Extensions 
 
-The conversion graph has been implemented in the ``conversions`` module. It is possible to create additional conversion graphs and register existing or new conversions in those graphs. As an example we may create a colors module, which converts between values in RGB and HSL color space. For this is example we will not bother with vectorizing the entities, and instead just work with single color entries and use the  ``colorsys`` module in the python standard library.
+The conversion graph has been implemented in the ``conversions`` module. It is possible to create additional conversion graphs and register existing or new conversions in those graphs. As an example we may create a colors module, which converts between values in the RGB and HSL color space. For this is example we will not bother with vectorizing the entities, and instead just work with single color entries and use the  ``colorsys`` module in the python standard library.
 
 ```python
 import colorsys
@@ -191,7 +192,7 @@ class HSLToRGB(Conversion):
 
 We can now write ``RGB(0.1, 0.3, 0.3).to(HSL)`` and get the correct result.
 
-If we wanted we could connect these to the points conversion graph, or include part of the points graph in the color conversion graph. 
+If we wanted, we could merge this graph into the points conversion graph, or include part of the points graph in the color conversion graph... 
 
 
 
