@@ -1,8 +1,9 @@
 import unittest
 import numpy as np
 
-from konvert.conversions import ConversionGraph
 from konvert.conversions import Graph
+from konvert.conversions import ConversionGraph
+from konvert.conversions import Conversion
 from konvert.conversions import ConnectionError
 
 
@@ -76,6 +77,17 @@ class GraphTest(GraphTestCase):
 
         path = graph.shortest_path(2, 3)
         self.assertPathFollowed(path, [2, 7, 0, 3])
+
+
+class ConversionTest(unittest.TestCase):
+
+    def test_conversion(self):
+        """ Test the base conversion """
+        conversion = Conversion()
+
+        # Check raising.
+        with self.assertRaisesRegex(NotImplementedError, 'not implemented'):
+            conversion.convert(0)
 
 
 if __name__ == '__main__':

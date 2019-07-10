@@ -112,5 +112,5 @@ class Conversion(object):
 
     @staticmethod
     def convert(src):
-        return src
+        raise NotImplementedError(f'convert not implemented for {src}.')
 
