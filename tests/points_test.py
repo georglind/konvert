@@ -36,6 +36,10 @@ class UtilitiesTest(PointsTestCase):
         v = 90 * degrees
         self.assertAlmostEqual(v, np.pi / 2)
 
+    def test_multiplying_degrees_with_iterable(self):
+        v = [45, 90, 180] * degrees
+        self.assertArraysEqual(v, [np.pi/4, np.pi/2, np.pi])
+
 
 class PointsTest(PointsTestCase):
 
