@@ -745,6 +745,9 @@ class Disc(Points):
         scale = R / self.R
         return Disc(self.theta, self.r * scale, R)
 
+    def rotate(self, delta):
+        return Disc(self.theta + delta, self.r, self.R)
+
 
 @converters.register()
 class DiscToPolar(Conversion):
@@ -781,19 +784,23 @@ class Square(Points):
     """
     A two-dimensional square.
     """
-    _sig = ['x', 'y', 'a']
+    _sig = ['x', 'y', 'a', 'alpha']
 
-    def __init__(self, x, y, a):
+    def __init__(self, x, y, a, alpha=0):
         """
         Side length a
         """
         self.x = np.array(x)
         self.y = np.array(y)
         self.a = a
+        self.alpha = alpha
 
     def resize(self, a):
         scale = a / self.a
-        return Square(self.x * scale, self.y * scale, a)
+        return Square(self.x * scale, self.y * scale, a, self.alpha)
+
+    def rotate(self, delta):
+        return Square(self.x, self.y, self.a, self.alpha + delta)
 
 
 @converters.register()
@@ -803,7 +810,7 @@ class SquareToCartesian2D(Conversion):
 
     @staticmethod
     def convert(sq):
-        return Cartesian2D(sq.x, sq.y)
+        return Cartesian2D(np.cos(sq.alpha) * sq.x, np.sin(sq.alpha) * np.sq.y)
 
 
 @converters.register()
@@ -823,8 +830,8 @@ class Cartesian2DToSquare(Projection):
     dst = Square
 
     @staticmethod
-    def convert(ca, a=1):
-        return Square(ca.x, ca.y, a)
+    def convert(ca, a=1, alpha=0):
+        return Square(ca.x, ca.y, a, alpha)
 
 
 
@@ -862,10 +869,19 @@ class SquareToDiscSquircular(Conversion):
     @staticmethod
     def convert(sq):
         # See https://arxiv.org/abs/1509.06344
+        alpha = sq.alpha
+        if alpha != 0:
+            sq = sq.rotate(-alpha)
+
         R = 0.5 * sq.a
         theta = np.arctan2(sq.y, sq.x)
         x2 = (1 / R * sq.x) ** 2
         y2 = (1 / R * sq.y) ** 2
         r = np.sqrt(x2 + y2 - x2 * y2) * R
 
-        return Disc(theta, r, R)
+        di = Disc(theta, r, R)
+
+        if alpha != 0:
+            di = di.rotate(alpha)
+
+        return di

@@ -266,16 +266,15 @@ class SquircularTet(PointsTestCase):
 
     def test_SquareToDisc(self):
         """ Test squircular square to disc and back """
-        s = Square(*[np.random.rand(3) * 2 for i in range(2)], 4)
-        m = s.project(SquareToDiscSquircular)
+        s = Square(*[np.random.rand(3) * 2 for i in range(2)], a=4)
         s1 = s.project(SquareToDiscSquircular).project(DiscToSquareSquircular)
         self.assertEqual(s, s1)
 
     def test_SquareToDiscSquircular(self):
         """ Test plot """
-        s = Square([1, 1, -1, -1], [-1, 1, 1, -1], 2)
+        s = Square([1, 1, -1, -1], [-1, 1, 1, -1], 2, alpha=23 * degrees)
         d = s.project(SquareToDiscSquircular)
-        d0 = Cartesian2D([1, 1, -1, -1], [-1, 1, 1, -1]).to(Disc).resize(1)
+        d0 = Cartesian2D([1, 1, -1, -1], [-1, 1, 1, -1]).to(Disc).resize(1).rotate(23 * degrees)
         self.assertEqual(d, d0)
 
     def notest_plot_SquareToDiscSquircular(self):
