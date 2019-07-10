@@ -725,3 +725,147 @@ class Azimuthal(Projection):
 
         r = sp.R * np.sin(sp.theta) / (1 - np.cos(sp.theta) / d)
         return Polar(sp.phi, r)
+
+
+class Disc(Points):
+    """
+    A two-dimensional disc.
+    """
+    _sig = ['theta', 'r', 'R']
+
+    def __init__(self, theta, r, R=1):
+        """
+        Radius R
+        """
+        self.theta = np.array(theta)
+        self.r = np.array(r)
+        self.R = R
+
+    def resize(self, R):
+        scale = R / self.R
+        return Disc(self.theta, self.r * scale, R)
+
+
+@converters.register()
+class DiscToPolar(Conversion):
+    src = Disc
+    dst = Polar
+
+    @staticmethod
+    def convert(di):
+        return Polar(di.theta, di.r)
+
+
+@converters.register()
+class PolarToDiscConversion(Conversion):
+    src = Polar
+    dst = Disc
+
+    @staticmethod
+    def convert(po):
+        R = np.max(po.r)
+        return Disc(po.theta, po.r, R)
+
+
+@projectors.register()
+class PolarToDisc(Projection):
+    src = Polar
+    dst = Disc
+
+    @staticmethod
+    def convert(po, R=1):
+        return Disc(po.theta, po.r, R)
+
+
+class Square(Points):
+    """
+    A two-dimensional square.
+    """
+    _sig = ['x', 'y', 'a']
+
+    def __init__(self, x, y, a):
+        """
+        Side length a
+        """
+        self.x = np.array(x)
+        self.y = np.array(y)
+        self.a = a
+
+    def resize(self, a):
+        scale = a / self.a
+        return Square(self.x * scale, self.y * scale, a)
+
+
+@converters.register()
+class SquareToCartesian2D(Conversion):
+    src = Square
+    dst = Cartesian2D
+
+    @staticmethod
+    def convert(sq):
+        return Cartesian2D(sq.x, sq.y)
+
+
+@converters.register()
+class Cartesian2DToSquareConversion(Conversion):
+    src = Cartesian2D
+    dst = Square
+
+    @staticmethod
+    def convert(ca):
+        a = 2 * max(np.max(ca.x), np.max(ca.y))
+        return Square(ca.x, ca.y, a)
+
+
+@projectors.register()
+class Cartesian2DToSquare(Projection):
+    src = Cartesian2D
+    dst = Square
+
+    @staticmethod
+    def convert(ca, a=1):
+        return Square(ca.x, ca.y, a)
+
+
+
+@converters.register()
+class DiscToSquareSquircular(Conversion):
+    src = Disc
+    dst = Square
+
+    @staticmethod
+    def convert(di):
+        # See https://arxiv.org/abs/1509.06344
+        f = np.tan(di.theta)
+
+        # Fix division by zero error my masking zero values.
+        mask = (f != 0)
+
+        # Fill in x, and compute unmasked values.
+        x = np.zeros(di.theta.shape)
+        x_sign = np.sign(np.cos(di.theta))
+        km = f[mask] ** 2
+        x[mask] = di.R * x_sign[mask] * np.sqrt((km + 1 - np.sqrt( (km + 1) ** 2 - 4 * km * (di.r[mask] / di.R) ** 2)) / (2 * km))
+        y = f * x
+
+        # Fill in masked values.
+        x[~mask] = x_sign[~mask] * di.r[~mask]
+
+        return Square(x, y, 2 * di.R)
+
+
+@converters.register()
+class SquareToDiscSquircular(Conversion):
+    src = Square
+    dst = Disc
+
+    @staticmethod
+    def convert(sq):
+        # See https://arxiv.org/abs/1509.06344
+        R = 0.5 * sq.a
+        theta = np.arctan2(sq.y, sq.x)
+        x2 = (1 / R * sq.x) ** 2
+        y2 = (1 / R * sq.y) ** 2
+        r = np.sqrt(x2 + y2 - x2 * y2) * R
+
+        return Disc(theta, r, R)

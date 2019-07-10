@@ -22,7 +22,10 @@ from konvert.points import Sphere
 from konvert.points import Spherical
 from konvert.points import Stereographic
 from konvert.points import Cartesian2DToBipolar
-
+from konvert.points import Square
+from konvert.points import Disc
+from konvert.points import SquareToDiscSquircular
+from konvert.points import DiscToSquareSquircular
 
 class PointsTestCase(unittest.TestCase):
 
@@ -231,6 +234,7 @@ class BipolarTest(PointsTestCase):
         p1 = p0.to(Bipolar)
         self.assertEqual(p1, points)
 
+
 class SphereTest(PointsTestCase):
 
     def test_sphere(self):
@@ -256,6 +260,60 @@ class SphereTest(PointsTestCase):
         po = points.project(Stereographic)
         self.assertArraysEqual(po.theta, [0, np.pi/2])
         self.assertArraysEqual(po.r, [np.nan, 1])
+
+
+class SquircularTet(PointsTestCase):
+
+    def test_SquareToDisc(self):
+        """ Test squircular square to disc and back """
+        s = Square(*[np.random.rand(3) * 2 for i in range(2)], 4)
+        m = s.project(SquareToDiscSquircular)
+        s1 = s.project(SquareToDiscSquircular).project(DiscToSquareSquircular)
+        self.assertEqual(s, s1)
+
+    def test_SquareToDiscSquircular(self):
+        """ Test plot """
+        s = Square([1, 1, -1, -1], [-1, 1, 1, -1], 2)
+        d = s.project(SquareToDiscSquircular)
+        d0 = Cartesian2D([1, 1, -1, -1], [-1, 1, 1, -1]).to(Disc).resize(1)
+        self.assertEqual(d, d0)
+
+    def notest_plot_SquareToDiscSquircular(self):
+        xs, ys = [], []
+        for s in [1, -1]:
+            for a in np.linspace(0, 2, 10):
+                xs.append(s * a * np.ones((64, )))
+                ys.append(a * np.linspace(-1, 1, 64))
+
+        s = Square(np.concatenate(xs + ys), np.concatenate(ys + xs), 4)
+        s.to(Cartesian2D).plot()
+
+        d = s.project(SquareToDiscSquircular)
+        d.to(Polar).scatter()
+
+        s = d.project(DiscToSquareSquircular)
+        s.to(Cartesian2D).plot()
+
+    def test_DiscToSquareSquircular(self):
+        """ Test plot """
+        d = Disc([45, 135, 225, 315] * degrees, [2] * 4, 2)
+        s = d.project(DiscToSquareSquircular)
+        s0 = Cartesian2D([1, -1, -1, 1], [1, 1, -1, -1]).to(Square).resize(4)
+        self.assertEqual(s, s0)
+
+    def notest_plot_DiscToSquareSquircular(self):
+        thetas, rs = [], []
+        for a in np.linspace(0, 2, 10, endpoint=True):
+            rs.append(a * np.ones((64, )))
+            thetas.append(np.linspace(1, 360, 64) * degrees)
+
+        s = Disc(np.concatenate(thetas), np.concatenate(rs), 2)
+        s.to(Polar).scatter()
+
+        s = s.to(DiscToSquareSquircular)
+        s.to(Cartesian2D).plot()
+
+        s.to(SquareToDiscSquircular).to(Polar).scatter()
 
 
 class ConversionsTest(PointsTestCase):
