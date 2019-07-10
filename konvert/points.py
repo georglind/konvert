@@ -38,10 +38,10 @@ def numpify(func):
 class Degree(object):
 
     def __mul__(self, other):
-        return np.pi / 180 * np.array(other)
+        return np.deg2rad(other)
 
     def __rmul__(self, other):
-        return np.pi / 180 * np.array(other)
+        return np.deg2rad(other)
 
     # work around numpy
     __array_priority__ = 10000
