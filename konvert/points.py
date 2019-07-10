@@ -226,9 +226,9 @@ class PolarToCartesian2D(Conversion):
     dst = Cartesian2D
 
     @staticmethod
-    def convert(sp):
-        x = sp.r * np.cos(sp.theta)
-        y = sp.r * np.sin(sp.theta)
+    def convert(po):
+        x = po.r * np.cos(po.theta)
+        y = po.r * np.sin(po.theta)
 
         return Cartesian2D(x, y)
 
@@ -534,16 +534,19 @@ class Sphere(Points):
 
     theta : azimuth (angle with negative z).
     phi   : right ascension (angle with positive x).
-    r     : radius (single value scalar)
+    R     : radius (single value scalar)
     """
-    _sig = ('theta', 'phi', 'r')
+    _sig = ('theta', 'phi', 'R')
 
-    def __init__(self, theta, phi, r):
+    def __init__(self, theta, phi, R):
         self.theta = np.array(theta)
         self.phi = np.array(phi)
 
-        # r is scalar.
-        self.r = r
+        # R is scalar.
+        self.R = R
+
+    def resize(self, R):
+        return Sphere(self.theta, self.phi, R)
 
 
 # 2D to 3D
@@ -554,7 +557,7 @@ class SphereToSpherical(Conversion):
 
     @staticmethod
     def convert(sp):
-        return Spherical(sp.theta, sp.phi, sp.r)
+        return Spherical(sp.theta, sp.phi, sp.R)
 
 
 @projectors.register()
@@ -564,18 +567,18 @@ class OnSphere(Projection):
     dst = Sphere
 
     @staticmethod
-    def project(sp, r=1):
-        return Sphere(sp.theta, sp.phi, r)
+    def project(sp, R=1):
+        return Sphere(sp.theta, sp.phi, R)
 
 
 class Equitorial(Points):
     """Points on the (celestial) sphere defined by right ascension and declination"""
     _sig = ('dec', 'asc', 'r')
 
-    def __init__(self, dec, asc, r=1):
+    def __init__(self, dec, asc, R=1):
         self.dec = np.array(dec)
         self.asc = np.array(asc)
-        self.r = r
+        self.R = R
 
     @property
     def lon(self):
@@ -603,7 +606,7 @@ class EquitorialToSphere(Conversion):
 
     @staticmethod
     def convert(eq):
-        return Sphere(np.pi / 2 - eq.dec, eq.asc, r=eq.r)
+        return Sphere(np.pi / 2 - eq.dec, eq.asc, R=eq.R)
 
 
 @converters.register()
@@ -613,7 +616,7 @@ class SphereToEquitorial(Conversion):
 
     @staticmethod
     def convert(sp):
-        return Equitorial(np.pi / 2 - sp.theta, sp.phi, r=sp.r)
+        return Equitorial(np.pi / 2 - sp.theta, sp.phi, R=sp.R)
 
 
 @projectors.register()
@@ -631,8 +634,8 @@ class Mercator(Projection):
         except ValueError:
             raise ValueError('Point outside Mercator cut-off.')
 
-        x = sp.r * (sp.phi - delta)
-        y = sp.r * np.log(np.tan(theta / 2))
+        x = sp.R * (sp.phi - delta)
+        y = sp.R * np.log(np.tan(theta / 2))
         return Cartesian2D(x, y)
 
 
@@ -650,8 +653,8 @@ class Equirectangular(Projection):
         return Cartesian2D(x, y)
 
     @staticmethod
-    def invert(ca, r=1):
-        return Sphere(np.arccos(ca.x / ca.y), ca.y, r)
+    def invert(ca, R=1):
+        return Sphere(np.arccos(ca.x / ca.y), ca.y, R)
 
 
 @projectors.register()
@@ -665,14 +668,14 @@ class Stereographic(Projection):
         # Ignore divide by zero warnings.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            r = sp.r * np.sin(sp.theta) / (1 - np.cos(sp.theta))
+            r = sp.R * np.sin(sp.theta) / (1 - np.cos(sp.theta))
 
         return Polar(sp.phi, r)
 
     @staticmethod
-    def invert(po, r=1):
+    def invert(po, R=1):
         theta = 2 * np.arctan(r / po.r)
-        return Sphere(phi=po.theta, theta=theta, r=r)
+        return Sphere(phi=po.theta, theta=theta, R=R)
 
 
 @projectors.register()
@@ -682,11 +685,11 @@ class Orthographic(Projection):
 
     @staticmethod
     def project(sp):
-        return Polar(sp.phi, sp.r * np.sin(sp.theta))
+        return Polar(sp.phi, sp.R * np.sin(sp.theta))
 
     @staticmethod
-    def invert(sp, r=1):
-        return Sphere(np.arcsin(po.theta / r),  po.phi, r)
+    def invert(sp, R=1):
+        return Sphere(np.arcsin(po.theta / R),  po.phi, R)
 
 
 @projectors.register()
@@ -696,11 +699,11 @@ class AzimuthalEquidistant(Projection):
 
     @staticmethod
     def project(sp):
-        return Polar(sp.phi, sp.r * (np.pi - sp.theta))
+        return Polar(sp.phi, sp.R * (np.pi - sp.theta))
 
     @staticmethod
-    def invert(po, r=1):
-        return Sphere(po.theta / r, po.phi, r)
+    def invert(po, R=1):
+        return Sphere(po.theta / R, po.phi, R)
 
 
 @projectors.register()
@@ -719,5 +722,5 @@ class Azimuthal(Projection):
         elif d is float('inf'):
             return Orthographic.project(sp).to(Polar)
 
-        r = sp.r * np.sin(sp.theta) / (1 - np.cos(sp.theta) / d)
+        r = sp.R * np.sin(sp.theta) / (1 - np.cos(sp.theta) / d)
         return Polar(sp.phi, r)

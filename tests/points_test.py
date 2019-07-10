@@ -233,7 +233,7 @@ class SphereTest(PointsTestCase):
         points = Sphere([0, np.pi], [0, np.pi], 1)
         self.assertIsInstance(points.theta, np.ndarray)
         self.assertIsInstance(points.phi, np.ndarray)
-        self.assertEqual(points.r, 1)
+        self.assertEqual(points.R, 1)
 
     def test_to(self):
         points = Sphere([0, np.pi], [0, np.pi], 1)
