@@ -29,7 +29,7 @@ class ProjectionCollection(object):
         if len(ps) > 1:
             raise TypeError(f'More than one projection registered for {src} to {dst} projection: {ps}')
 
-        return ps[0].project(value, *args, **kwargs)
+        return ps[0].convert(value, *args, **kwargs)
 
     def register(self):
         """
@@ -47,5 +47,5 @@ class Projection(object):
     dst = None
 
     @staticmethod
-    def project(value):
-        return value
+    def convert(value):
+        raise NotImplementedError(f'Projection not implemented for {type(value)}')

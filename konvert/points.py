@@ -81,6 +81,7 @@ class Points(object, metaclass=ABCMeta):
         """
         Convert to destination type using the conversion graph
         """
+        # To tuple.
         if dst is tuple:
             return tuple(getattr(self, name) for name in self._sig)
 
@@ -96,12 +97,12 @@ class Points(object, metaclass=ABCMeta):
             return projectors.project(self, dst, *args, **kwargs)
 
         # Project using Projection. First convert to projection source type.
-        if issubclass(dst, Projection):
+        if issubclass(dst, (Projection, Conversion)):
             target = self
             if dst.src is not type(self):
                 target = self.to(dst.src)
 
-            return dst.project(target, *args, **kwargs)
+            return dst.convert(target, *args, **kwargs)
 
         # Errors.
         else:
@@ -273,7 +274,7 @@ class OnPlane(Projection):
     dst = Cartesian2D
 
     @staticmethod
-    def project(ca):
+    def convert(ca):
         return Cartesian2D(ca.x, ca.y)
 
 class Quaternion(Points):
@@ -337,7 +338,7 @@ class QuaternionToCartestian3D(Projection):
     dst = Cartesian3D
 
     @staticmethod
-    def project(q):
+    def convert(q):
         return Cartesian3D(q.x, q.y, q.z)
 
 
@@ -508,7 +509,7 @@ class BipolarToCartesian2DConversion(Conversion):
 
     @staticmethod
     def convert(ca):
-        return Cartesian2DToBipolar.project(ca, a=1)
+        return Cartesian2DToBipolar.convert(ca, a=1)
 
 
 @projectors.register()
@@ -517,7 +518,7 @@ class Cartesian2DToBipolar(Projection):
     dst = Bipolar
 
     @staticmethod
-    def project(ca, a=1):
+    def convert(ca, a=1):
         # Ignore division by zero.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -567,7 +568,7 @@ class OnSphere(Projection):
     dst = Sphere
 
     @staticmethod
-    def project(sp, R=1):
+    def convert(sp, R=1):
         return Sphere(sp.theta, sp.phi, R)
 
 
@@ -626,7 +627,7 @@ class Mercator(Projection):
     dst = Cartesian2D
 
     @staticmethod
-    def project(sp, cutoff=np.pi / 5, delta=0):
+    def convert(sp, cutoff=np.pi / 5, delta=0):
         theta = np.array(sp.theta)
         mask = (theta < cutoff) & (theta > np.pi - cutoff)
         try:
@@ -646,7 +647,7 @@ class Equirectangular(Projection):
     dst = Cartesian2D
 
     @staticmethod
-    def project(sp):
+    def convert(sp):
         x = sp.phi * np.cos(sp.theta)
         y = sp.phi
 
@@ -664,7 +665,7 @@ class Stereographic(Projection):
     dst = Polar
 
     @staticmethod
-    def project(sp):
+    def convert(sp):
         # Ignore divide by zero warnings.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
@@ -684,7 +685,7 @@ class Orthographic(Projection):
     dst = Polar
 
     @staticmethod
-    def project(sp):
+    def convert(sp):
         return Polar(sp.phi, sp.R * np.sin(sp.theta))
 
     @staticmethod
@@ -698,7 +699,7 @@ class AzimuthalEquidistant(Projection):
     dst = Polar
 
     @staticmethod
-    def project(sp):
+    def convert(sp):
         return Polar(sp.phi, sp.R * (np.pi - sp.theta))
 
     @staticmethod
@@ -715,12 +716,12 @@ class Azimuthal(Projection):
     dst = Polar
 
     @staticmethod
-    def project(sp, d=1):
+    def convert(sp, d=1):
         if d == 0:
             raise ValueError('Azimuthal projection undefined for d=0')
 
         elif d is float('inf'):
-            return Orthographic.project(sp).to(Polar)
+            return Orthographic.convert(sp).to(Polar)
 
         r = sp.R * np.sin(sp.theta) / (1 - np.cos(sp.theta) / d)
         return Polar(sp.phi, r)
