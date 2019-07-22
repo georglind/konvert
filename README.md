@@ -2,13 +2,13 @@
 
 Konvert implements universal conversion graphs for e.g. coordinate transformations.
 
-At the core, konvert represents types connected by conversions on a graph. Such conversion graphs can be expandend incrementally, because it only requires two connections to connect a new type to the graph, This type can then be freely converted to any other type in the graph, by automatically chaining conversions between existing types.
+At the core, konvert represents different types as connected by conversions on a graph. Such conversion graphs can be expandend incrementally, because it only requires two connections to connect a new type to the graph, This type can then be freely converted to any other type in the graph by automatically chaining conversions between existing types.
 
 The automatic chaining requires the conversions to be parameter-free. Conversions with additional parameters are called projections, which konvert also helps you manage.
 
 ## Points
 
-The moule konvert.points includes a conversion graph for coordinate transformations. As an example consider a set of points in two-dimensional Cartesian coordinates:
+The moule ``konvert.points`` includes a conversion graph for coordinate transformations. As an example consider a set of points in two-dimensional Cartesian coordinates:
 
 ```python
 from konvert.points import Cartesian2D
@@ -16,7 +16,7 @@ from konvert.points import Cartesian2D
 line = Cartesian2D(x=[0, 1, 2], y=[0, 1, 2])
 ```
 
-This points can be converted to other implented 2D point sets, like ``Polar`` and ``Bipolar``, by using the ``to()`` method
+This points can be converted to other implemented 2D point sets, like ``Polar`` and ``Bipolar``, by using the ``to()`` method
 
 ```python
 from konvert.points import Polar, Bipolar
@@ -49,7 +49,7 @@ p0.rotate(theta=45 * degrees, point=q0)
 
 ### Helpers
 
-Because the points module work extensively with angles, konvert defines a convenience ``degrees`` symbol, which converts values and arrays in degrees to radians,
+Because the points module work extensively with angles in radians, konvert defines a convenience ``degrees`` symbol, which converts values and arrays in degrees to radians,
 
 ```python
 from konvert.points import degrees
@@ -121,13 +121,13 @@ class Cartesian2DToSkew2D(Projection):
     dst = Skew2D
     
     @staticmethod
-    def project(cart, theta=np.pi / 2):
+    def convert(cart, theta=np.pi / 2):
         y = cart.y / numpy.sin(theta)
         x = cart.x - numpy.cos(theta) * y
         return Skew2D(x, y, theta)
 ```
 
-With these two additions we can convet between Skew2D points and any points type in the graph,
+With these two additions we can convert between Skew2D points and any Points type in the graph,
 
 ```python
 p0 = Skew2D(1, 2, theta=45 * degrees)
@@ -143,7 +143,7 @@ p0 = p1.project(OnPlane).project(Cartesian2DToSkew2D, theta=45 * degrees)
 
 ## Extensions 
 
-The conversion graph has been implemented in the ``conversions`` module. It is possible to create additional conversion graphs and register existing or new conversions in those graphs. As an example we may create a colors module, which converts between values in the RGB and HSL color space. For this is example we will not bother with vectorizing the entities, and instead just work with single color entries and use the  ``colorsys`` module in the python standard library.
+The conversion graph has been implemented in the ``conversions`` module. It is possible to create additional conversion graphs and register existing or new conversions in those graphs. As an example we may create a colors module, which converts between values in the RGB and HSL color space. For this example we will not bother with vectorizing the entities, and instead just work with single color entries and use the  ``colorsys`` module in the python standard library.
 
 ```python
 import colorsys
@@ -168,7 +168,7 @@ class HSL(Color):
         self.s = s
         self.l = l
   
-converters.register()
+@converters.register()
 class RGBToHSL(Conversion):
     src = RGB
     dst = HSL
@@ -179,7 +179,7 @@ class RGBToHSL(Conversion):
         return HSL(*hsl)
         
 
-converters.register()
+@converters.register()
 class HSLToRGB(Conversion):
   src = RGB
   dst = HSL
@@ -192,7 +192,7 @@ class HSLToRGB(Conversion):
 
 We can now write ``RGB(0.1, 0.3, 0.3).to(HSL)`` and get the correct result.
 
-If we wanted, we could merge this graph into the points conversion graph, or include part of the points graph in the color conversion graph... 
+If we wanted, we could merge this graph into the entire konvert.points conversion graph, or include part of the points graph in the color conversion graph... 
 
 
 
