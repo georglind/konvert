@@ -97,7 +97,7 @@ class Points(object, metaclass=ABCMeta):
             return projectors.project(self, dst, *args, **kwargs)
 
         # Project using Projection. First convert to projection source type.
-        if issubclass(dst, (Projection, Conversion)):
+        if issubclass(dst, Projection):
             target = self
             if dst.src is not type(self):
                 target = self.to(dst.src)
@@ -717,8 +717,8 @@ class Azimuthal(Projection):
 
     @staticmethod
     def convert(sp, d=1):
-        if d == 0:
-            raise ValueError('Azimuthal projection undefined for d=0')
+        if d <= 0:
+            raise ValueError('Azimuthal projection undefined for d<=0')
 
         elif d is float('inf'):
             return Orthographic.convert(sp).to(Polar)
@@ -750,7 +750,7 @@ class Disc(Points):
 
 
 @converters.register()
-class DiscToPolar(Conversion):
+class DiscToPolarConversion(Conversion):
     src = Disc
     dst = Polar
 
@@ -835,8 +835,8 @@ class Cartesian2DToSquare(Projection):
 
 
 
-@converters.register()
-class DiscToSquareSquircular(Conversion):
+@projectors.register()
+class DiscToSquareSquircular(Projection):
     src = Disc
     dst = Square
 
@@ -861,8 +861,8 @@ class DiscToSquareSquircular(Conversion):
         return Square(x, y, 2 * di.R)
 
 
-@converters.register()
-class SquareToDiscSquircular(Conversion):
+@projectors.register()
+class SquareToDiscSquircular(Projection):
     src = Square
     dst = Disc
 
